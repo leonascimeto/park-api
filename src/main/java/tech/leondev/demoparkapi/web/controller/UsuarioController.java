@@ -83,6 +83,9 @@ public class UsuarioController {
                     @ApiResponse(responseCode = "400", description = "Senha inválida",
                             content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
                     ),
+                    @ApiResponse(responseCode = "422", description = "Campos inválidos ou mal formatados",
+                            content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
+                    ),
             }
     )
     @PatchMapping("/{id}")

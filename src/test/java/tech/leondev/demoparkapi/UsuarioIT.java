@@ -9,6 +9,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import tech.leondev.demoparkapi.web.dto.UsuarioCreateDTO;
 import tech.leondev.demoparkapi.web.dto.UsuarioResponseDTO;
+import tech.leondev.demoparkapi.web.dto.UsuarioUpdateSenhaDTO;
 import tech.leondev.demoparkapi.web.exception.ErrorMessage;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -141,5 +142,57 @@ public class UsuarioIT {
 
         Assertions.assertThat(response).isNotNull();
         Assertions.assertThat(response.getStatus()).isEqualTo(404);
+    }
+
+    @Test
+    public void editaSenha_ComDadosValidos_RetornaStatus204(){
+        testClient
+                .patch()
+                .uri("/api/v1/usuarios/100")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UsuarioUpdateSenhaDTO("123456", "321654", "321654"))
+                .exchange()
+                .expectStatus().isNoContent();
+    }
+
+    @Test
+    public void editarSenha_ComIdInexistente_RetornaErrorComStatus404(){
+        testClient
+                .patch()
+                .uri("/api/v1/usuarios/0")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UsuarioUpdateSenhaDTO("123456", "321654", "321654"))
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    public void editarSenha_ComCamposInvalidos_RetornaErrorComStatus422(){
+        testClient
+                .patch()
+                .uri("/api/v1/usuarios/0")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UsuarioUpdateSenhaDTO("1234561", "3216", ""))
+                .exchange()
+                .expectStatus().isEqualTo(422);
+    }
+
+    @Test
+    public void editarSenha_ComSenhasInvalidas_RetornaErrorComStatus400(){
+        testClient
+                .patch()
+                .uri("/api/v1/usuarios/100")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UsuarioUpdateSenhaDTO("123456", "321654", "147258"))
+                .exchange()
+                .expectStatus().isEqualTo(400);
+
+        testClient
+                .patch()
+                .uri("/api/v1/usuarios/100")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UsuarioUpdateSenhaDTO("885522", "321654", "321654"))
+                .exchange()
+                .expectStatus().isEqualTo(400);
     }
 }
