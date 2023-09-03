@@ -12,6 +12,8 @@ import tech.leondev.demoparkapi.web.dto.UsuarioResponseDTO;
 import tech.leondev.demoparkapi.web.dto.UsuarioUpdateSenhaDTO;
 import tech.leondev.demoparkapi.web.exception.ErrorMessage;
 
+import java.util.List;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(scripts = "/sql/usuarios/usuario-delete.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @Sql(scripts = "/sql/usuarios/usuario-insert.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
@@ -194,5 +196,19 @@ public class UsuarioIT {
                 .bodyValue(new UsuarioUpdateSenhaDTO("885522", "321654", "321654"))
                 .exchange()
                 .expectStatus().isEqualTo(400);
+    }
+
+    @Test
+    public void buscarTodosUsuarios_RetornaUsuauriosComStatus200(){
+        List<UsuarioResponseDTO> response = testClient
+                .get()
+                .uri("/api/v1/usuarios")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(UsuarioResponseDTO.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.size()).isEqualTo(3);
     }
 }
