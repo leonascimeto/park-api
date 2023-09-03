@@ -9,6 +9,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import tech.leondev.demoparkapi.web.dto.UsuarioCreateDTO;
 import tech.leondev.demoparkapi.web.dto.UsuarioResponseDTO;
+import tech.leondev.demoparkapi.web.exception.ErrorMessage;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(scripts = "/sql/usuarios/usuario-delete.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
@@ -35,5 +36,110 @@ public class UsuarioIT {
         Assertions.assertThat(response.getId()).isNotNull();
         Assertions.assertThat(response.getUsername()).isEqualTo("dexter@email.com");
         Assertions.assertThat(response.getRole()).isEqualTo("CLIENTE");
+    }
+
+    @Test
+    public void createUsuaion_ComUsernameInvalido_RetornaErrorMessage422(){
+        ErrorMessage response = testClient
+                .post()
+                .uri("/api/v1/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UsuarioCreateDTO("", "976431"))
+                .exchange()
+                .expectStatus().isEqualTo(422)
+                .expectBody(ErrorMessage.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getStatus()).isEqualTo(422);
+    }
+
+    @Test
+    public void createUsuaion_ComPasswordInvalido_RetornaErrorMessage422(){
+        ErrorMessage response;
+        response  = testClient
+                .post()
+                .uri("/api/v1/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UsuarioCreateDTO("dexter@email.com", ""))
+                .exchange()
+                .expectStatus().isEqualTo(422)
+                .expectBody(ErrorMessage.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getStatus()).isEqualTo(422);
+
+        response = testClient
+                .post()
+                .uri("/api/v1/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UsuarioCreateDTO("dexter@email.com", "1423"))
+                .exchange()
+                .expectStatus().isEqualTo(422)
+                .expectBody(ErrorMessage.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getStatus()).isEqualTo(422);
+
+        response = testClient
+                .post()
+                .uri("/api/v1/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UsuarioCreateDTO("dexter@email.com", "1423148"))
+                .exchange()
+                .expectStatus().isEqualTo(422)
+                .expectBody(ErrorMessage.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getStatus()).isEqualTo(422);
+    }
+
+    @Test
+    public void createUsuaion_ComUsernameRepetido_RetornaErrorMessage409(){
+        ErrorMessage response = testClient
+                .post()
+                .uri("/api/v1/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new UsuarioCreateDTO("ana@email.com", "123456"))
+                .exchange()
+                .expectStatus().isEqualTo(409)
+                .expectBody(ErrorMessage.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getStatus()).isEqualTo(409);
+    }
+
+    @Test
+    public void buscarUsuario_ComIdExistente_RetornaUsuaurioComStatus200(){
+        UsuarioResponseDTO response = testClient
+                .get()
+                .uri("/api/v1/usuarios/100")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(UsuarioResponseDTO.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getId()).isEqualTo(100);
+        Assertions.assertThat(response.getUsername()).isEqualTo("ana@email.com");
+        Assertions.assertThat(response.getRole()).isEqualTo("ADMIN");
+    }
+
+    @Test
+    public void buscarUsuario_ComIdInexistente_RetornaErrorComStatus404(){
+        ErrorMessage response = testClient
+                .get()
+                .uri("/api/v1/usuarios/99")
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ErrorMessage.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getStatus()).isEqualTo(404);
     }
 }
