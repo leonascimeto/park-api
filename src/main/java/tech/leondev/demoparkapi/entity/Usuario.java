@@ -25,7 +25,7 @@ public class Usuario implements Serializable {
     private Long id;
     @Column(nullable = false, unique = true, length = 100)
     private String username;
-    @Column(nullable = false, unique = true, length = 200)
+    @Column(nullable = false, length = 200)
     private String password;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

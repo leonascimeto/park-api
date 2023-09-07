@@ -81,17 +81,11 @@ public class UsuarioController {
     @Operation(summary = "Atualizar senha", description = "Requisição exige um Bearer Token. Acesso restrito a ADMIN|ClIENTE",
             security = @SecurityRequirement(name = "security"),
             responses = {
-                    @ApiResponse(responseCode = "204", description = "Senha atualizada com sucesso",
-                            content = @Content(mediaType = "Application/json",
-                                    schema = @Schema(implementation = Void.class))
-                    ),
+                    @ApiResponse(responseCode = "204", description = "Senha atualizada com sucesso"),
                     @ApiResponse(responseCode = "400", description = "Senha inválida",
                             content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
                     ),
                     @ApiResponse(responseCode = "403", description = "Usuário sem permissão",
-                            content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
-                    ),
-                    @ApiResponse(responseCode = "404", description = "Recurso não encontrado",
                             content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
                     ),
                     @ApiResponse(responseCode = "422", description = "Campos inválidos ou mal formatados",
