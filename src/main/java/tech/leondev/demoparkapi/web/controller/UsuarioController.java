@@ -4,12 +4,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import tech.leondev.demoparkapi.entity.Usuario;
 import tech.leondev.demoparkapi.service.UsuarioService;
@@ -52,11 +54,15 @@ public class UsuarioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioMapper.toResponseDTO(response));
     }
 
-    @Operation(summary = "Recuperar um usuário pelo ID", description = "Recuperar um usuário pelo ID",
+    @Operation(summary = "Recuperar um usuário pelo ID", description = "Requisição exige um Bearer Token. Acesso restrito a ADMIN|ClIENTE",
+            security = @SecurityRequirement(name = "security"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Recurso recuperado com sucesso",
                             content = @Content(mediaType = "Application/json",
                                     schema = @Schema(implementation = UsuarioResponseDTO.class))
+                    ),
+                    @ApiResponse(responseCode = "403", description = "Usuário sem permissão",
+                            content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
                     ),
                     @ApiResponse(responseCode = "404", description = "Recurso não encontrado",
                             content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
@@ -64,6 +70,7 @@ public class UsuarioController {
             }
     )
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') OR (hasRole('CLIENTE') AND #id == authentication.principal.id)")
     public ResponseEntity<UsuarioResponseDTO> getById(@PathVariable Long id){
         log.info("[start] UsuarioController - getById");
         Usuario response = usuarioService.buscarPorId(id);
@@ -71,16 +78,20 @@ public class UsuarioController {
         return ResponseEntity.status(HttpStatus.OK).body(UsuarioMapper.toResponseDTO(response));
     }
 
-    @Operation(summary = "Atualizar senha", description = "Atualizar senha",
+    @Operation(summary = "Atualizar senha", description = "Requisição exige um Bearer Token. Acesso restrito a ADMIN|ClIENTE",
+            security = @SecurityRequirement(name = "security"),
             responses = {
                     @ApiResponse(responseCode = "204", description = "Senha atualizada com sucesso",
                             content = @Content(mediaType = "Application/json",
                                     schema = @Schema(implementation = Void.class))
                     ),
-                    @ApiResponse(responseCode = "404", description = "Recurso não encontrado",
+                    @ApiResponse(responseCode = "400", description = "Senha inválida",
                             content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
                     ),
-                    @ApiResponse(responseCode = "400", description = "Senha inválida",
+                    @ApiResponse(responseCode = "403", description = "Usuário sem permissão",
+                            content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
+                    ),
+                    @ApiResponse(responseCode = "404", description = "Recurso não encontrado",
                             content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
                     ),
                     @ApiResponse(responseCode = "422", description = "Campos inválidos ou mal formatados",
@@ -89,6 +100,7 @@ public class UsuarioController {
             }
     )
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENTE') AND (#id == authentication.principal.id)")
     public ResponseEntity<Void> updatePassword(@PathVariable Long id, @Valid @RequestBody UsuarioUpdateSenhaDTO usuarioUpdateSenhaDTO){
         log.info("[start] UsuarioController - updatePassword");
         Usuario response = usuarioService.editarSenha(
@@ -101,15 +113,20 @@ public class UsuarioController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Listar todos os usuários", description = "Listar todos os usuários",
+    @Operation(summary = "Listar todos os usuários", description = "Requisição exige um Bearer Token. Acesso restrito a ADMIN",
+            security = @SecurityRequirement(name = "security"),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Usuários listados",
                             content = @Content(mediaType = "Application/json",
                                     schema = @Schema(implementation = UsuarioResponseDTO.class))
+                    ),
+                    @ApiResponse(responseCode = "403", description = "Usuário sem permissão",
+                            content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
                     )
             }
     )
     @GetMapping()
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UsuarioResponseDTO>> getAll(){
         log.info("[start] UsuarioController - getAll");
         List<Usuario> response = usuarioService.busrcarTodos();
