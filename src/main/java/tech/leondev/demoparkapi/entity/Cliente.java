@@ -1,7 +1,7 @@
 package tech.leondev.demoparkapi.entity;
 
 import jakarta.persistence.*;
-import jdk.jfr.Name;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +21,7 @@ import java.util.Objects;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
 @Table(name = "clientes")
 @EntityListeners(AuditingEntityListener.class)
 public class Cliente implements Serializable {
@@ -28,11 +29,12 @@ public class Cliente implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = false, length = 100)
+    @Column(name = "nome", nullable = false, length = 100)
     private String nome;
-    @CPF
     @Column(name = "cpf", nullable = false, unique = true)
+    @Size(min = 11, max = 14)
     private String cpf;
+    @OneToOne
     @JoinColumn(name = "id_usuario", nullable = false)
     private Usuario usuario;
 
