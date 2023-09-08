@@ -10,6 +10,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import tech.leondev.demoparkapi.exception.CpfUniqueValidationException;
 import tech.leondev.demoparkapi.exception.EntityNotFoundException;
 import tech.leondev.demoparkapi.exception.PasswordInvalidException;
 import tech.leondev.demoparkapi.exception.UsernameUniqueViolationException;
@@ -53,7 +54,7 @@ public class ApiExceptionHandler {
                 .body(new ErrorMessage(request, HttpStatus.UNPROCESSABLE_ENTITY, "Campo(s) Invalido(s)", result));
     }
 
-    @ExceptionHandler(UsernameUniqueViolationException.class)
+    @ExceptionHandler({UsernameUniqueViolationException.class, CpfUniqueValidationException.class})
     public ResponseEntity<ErrorMessage> uniqueValidationException(RuntimeException ex, HttpServletRequest request){
         log.error("Api Erro - ", ex);
         return ResponseEntity
