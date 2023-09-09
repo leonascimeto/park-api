@@ -11,10 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import tech.leondev.demoparkapi.entity.Cliente;
 import tech.leondev.demoparkapi.jwt.JwtUserDetails;
 import tech.leondev.demoparkapi.service.ClienteService;
@@ -35,7 +32,7 @@ public class ClienteController {
     private final ClienteService clienteService;
     private final UsuarioService usuarioService;
 
-    @Operation(summary = "Criar um novo usuário", description = "Recurso para criar um novo usuário",
+    @Operation(summary = "Criar um novo cliente", description = "Recurso para criar um novo cliente",
             responses = {
                     @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso",
                             content = @Content(mediaType = "Application/json",
@@ -63,4 +60,28 @@ public class ClienteController {
         log.info("[end] ClienteController - create");
         return ResponseEntity.status(201).body(ClienteMapper.toClienteResponseDTO(cliente));
     }
+
+    @Operation(summary = "Buscar cliente", description = "Recurso para localizar cliente pelo ID",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Recurso localizado com sucesso",
+                            content = @Content(mediaType = "Application/json",
+                                    schema = @Schema(implementation = UsuarioResponseDTO.class))
+                    ),
+                    @ApiResponse(responseCode = "404", description = "Cliente não encontrado",
+                            content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
+                    ),
+                    @ApiResponse(responseCode = "403", description = "Recurso não permitido ao perfil que não é ADMIN",
+                            content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
+                    ),
+            }
+    )
+    @GetMapping("/{idCliente}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ClienteResponseDTO> getById(@PathVariable Long idCliente){
+        log.info("[start] ClienteController - getById");
+        Cliente cliente = clienteService.buscarPorId(idCliente);
+        log.info("[end] ClienteController - getById");
+        return ResponseEntity.status(200).body(ClienteMapper.toClienteResponseDTO(cliente));
+    }
+
 }
