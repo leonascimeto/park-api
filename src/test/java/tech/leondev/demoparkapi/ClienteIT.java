@@ -214,4 +214,36 @@ public class ClienteIT {
         Assertions.assertThat(response.getStatus()).isEqualTo(403);
 
     }
+
+    @Test
+    public void detalhesCliente_ComClienteAutenticado_RetornaReponseClienteDTO200(){
+        ClienteResponseDTO response = testClient
+                .get()
+                .uri("/api/v1/clientes/detalhes")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "bia@email.com", "123456"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(ClienteResponseDTO.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getId()).isEqualTo(10L);
+        Assertions.assertThat(response.getCpf()).isEqualTo("451.050.250-83");
+        Assertions.assertThat(response.getNome()).isEqualTo("Bianca Silva");
+    }
+
+    @Test
+    public void detalhesCliente_ComTokenDoAdmin_RetornaErrorMessage403(){
+        ErrorMessage response = testClient
+                .get()
+                .uri("/api/v1/clientes/detalhes")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "ana@email.com", "123456"))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody(ErrorMessage.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getStatus()).isEqualTo(403);
+    }
 }

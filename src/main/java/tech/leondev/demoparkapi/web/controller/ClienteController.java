@@ -132,4 +132,24 @@ public class ClienteController {
         log.info("[end] ClienteController - getAll");
         return ResponseEntity.ok().body(PageableMapper.toDto(clientes));
     }
+
+    @Operation(summary = "Buscar detalhes do cliente autenticado", description = "",
+            security = @SecurityRequirement(name = "security"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Requisição exige uso de bearer token. Acesso restrito a role='CLIENTE'",
+                            content = @Content(mediaType = "Application/json",
+                                    schema = @Schema(implementation = UsuarioResponseDTO.class))
+                    ),
+                    @ApiResponse(responseCode = "403", description = "Recurso não permitido ao perfil que não é CLIENTE",
+                            content = @Content(mediaType = "Application/json", schema = @Schema(implementation = ErrorMessage.class))
+                    ),
+            }
+    )
+    @GetMapping("/detalhes")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<ClienteResponseDTO> getDetails(@AuthenticationPrincipal JwtUserDetails userDetails){
+        Cliente cliente = clienteService.buscarPorUsuarioId(userDetails.getId());
+        return ResponseEntity.ok().body(ClienteMapper.toClienteResponseDTO(cliente));
+    }
+
 }
