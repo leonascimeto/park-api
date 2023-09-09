@@ -9,6 +9,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import tech.leondev.demoparkapi.web.dto.ClienteCreateDTO;
 import tech.leondev.demoparkapi.web.dto.ClienteResponseDTO;
+import tech.leondev.demoparkapi.web.dto.PageableDTO;
 import tech.leondev.demoparkapi.web.exception.ErrorMessage;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -163,5 +164,54 @@ public class ClienteIT {
 
         Assertions.assertThat(response).isNotNull();
         Assertions.assertThat(response.getStatus()).isEqualTo(403);
+    }
+
+    @Test
+    public void listClientes_ComPaginacaoPerfilAdmin_RetornaPageCliente200(){
+        PageableDTO response;
+        response = testClient
+                .get()
+                .uri("/api/v1/clientes")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "ana@email.com", "123456"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PageableDTO.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getContent().size()).isEqualTo(2);
+        Assertions.assertThat(response.getNumber()).isEqualTo(0);
+        Assertions.assertThat(response.getTotalPages()).isEqualTo(1);
+        Assertions.assertThat(response.getTotalElements()).isEqualTo(2);
+
+        response = testClient
+                .get()
+                .uri("/api/v1/clientes?size=1&page=1")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "ana@email.com", "123456"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PageableDTO.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getContent().size()).isEqualTo(1);
+        Assertions.assertThat(response.getNumber()).isEqualTo(1);
+        Assertions.assertThat(response.getTotalPages()).isEqualTo(2);
+    }
+
+    @Test
+    public void listClientes_ComPaginacaoPerfilCliente_RetornaErrorMessage403(){
+        ErrorMessage response = testClient
+                .get()
+                .uri("/api/v1/clientes")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "bia@email.com", "123456"))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody(ErrorMessage.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(response).isNotNull();
+        Assertions.assertThat(response.getStatus()).isEqualTo(403);
+
     }
 }
