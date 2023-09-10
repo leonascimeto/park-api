@@ -5,8 +5,8 @@ insert into USUARIOS (id, username, password, role)
 insert into USUARIOS (id, username, password, role)
     values (102, 'bob@email.com.br', '$2a$10$AtWo422MdyRQ1RgPzmJNnuDB7xN0GW38sXT4rnBFBqGnMyVmVEf4O', 'ROLE_CLIENTE');
 
-insert into CLIENTES (id, nome, cpf, id_usuario) values (21, 'Biatriz Rodrigues', '09191773016', 101);
-insert into CLIENTES (id, nome, cpf, id_usuario) values (22, 'Rodrigo Silva', '98401203015', 102);
+insert into CLIENTES (id, nome, cpf, id_usuario) values (21, 'Biatriz Rodrigues', '221.660.140-38', 101);
+insert into CLIENTES (id, nome, cpf, id_usuario) values (22, 'Rodrigo Silva', '776.809.540-54', 102);
 
 insert into vagas (id, codigo, status) values (100, 'A-01', 'OCUPADA');
 insert into vagas (id, codigo, status) values (200, 'A-02', 'OCUPADA');

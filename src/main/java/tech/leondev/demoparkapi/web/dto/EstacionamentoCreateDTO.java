@@ -6,8 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.validator.constraints.br.CPF;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
-public class EstacionamentoDTO {
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class EstacionamentoCreateDTO {
     @NotBlank
     @Size(min = 8, max = 8)
     @Pattern(regexp = "[A-Z]{3}-[0-9]{4}", message = "A placa do veiculo deve seguir o padrão 'ZZZ-0000'")
