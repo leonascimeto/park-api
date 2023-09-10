@@ -1,6 +1,7 @@
 package tech.leondev.demoparkapi.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import tech.leondev.demoparkapi.entity.Vaga;
 
 import java.util.Optional;
