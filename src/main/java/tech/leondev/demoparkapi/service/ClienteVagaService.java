@@ -1,11 +1,14 @@
 package tech.leondev.demoparkapi.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tech.leondev.demoparkapi.entity.ClienteVaga;
 import tech.leondev.demoparkapi.exception.EntityNotFoundException;
 import tech.leondev.demoparkapi.repository.ClienteVagaRepository;
+import tech.leondev.demoparkapi.repository.projection.ClienteVagaProjection;
 
 @Service
 @RequiredArgsConstructor
@@ -26,5 +29,15 @@ public class ClienteVagaService {
     @Transactional(readOnly = true)
     public long getTotalVezesEstacionamentoCompleto(String cpf) {
         return clienteVagaRepository.countByClienteCpfAndDataSaidaIsNotNull(cpf);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ClienteVagaProjection> buscarTodosPorCpf(String cpf, Pageable pageable) {
+        return clienteVagaRepository.findAllByClienteCpf(cpf, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ClienteVagaProjection> buscarTodosPorUsuarioId(Long id, Pageable pageable) {
+        return clienteVagaRepository.findAllByClienteUsuarioId(id, pageable);
     }
 }

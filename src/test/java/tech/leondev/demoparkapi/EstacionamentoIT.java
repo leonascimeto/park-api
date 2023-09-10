@@ -1,5 +1,6 @@
 package tech.leondev.demoparkapi;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import tech.leondev.demoparkapi.web.dto.EstacionamentoCreateDTO;
+import tech.leondev.demoparkapi.web.dto.PageableDTO;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(scripts = "/sql/estacionamentos/estacionamento-delete.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
@@ -109,7 +111,6 @@ public class EstacionamentoIT {
     }
 
     @Test
-    @Sql(scripts = "/sql/estacionamentos/estacionamento-delete-vagas-ocupadas.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     @Sql(scripts = "/sql/estacionamentos/estacionamento-insert-vagas-ocupadas.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     @Sql(scripts = "/sql/estacionamentos/estacionamento-delete-vagas-ocupadas.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     public void criarCheckin_comVagasLivresInexistentes_RetornarErro404(){
@@ -211,7 +212,7 @@ public class EstacionamentoIT {
     }
 
     @Test
-    public void criarCheckout_ComRoleCliebte_RetornarError403(){
+    public void criarCheckout_ComRoleCliente_RetornarError403(){
         testClient.put().uri("/api/v1/estacionamentos/checkout/{recibo}", "20230313-101300")
                 .headers(JWTAuthentication.getHeaderAuthorization(testClient, "bia@email.com.br", "123456"))
                 .exchange()
@@ -219,6 +220,66 @@ public class EstacionamentoIT {
                 .expectBody()
                 .jsonPath("status").isEqualTo(403)
                 .jsonPath("method").isEqualTo("PUT");
+
+    }
+
+    @Test
+    public void buscarEstacionamentos_PorClienteCPF_RetornarSucesso200(){
+        PageableDTO responseBody;
+        responseBody = testClient.get().uri("/api/v1/estacionamentos/cpf/{cpf}?size=1&page=0", "221.660.140-38")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "ana@email.com.br", "123456"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PageableDTO.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(responseBody).isNotNull();
+        Assertions.assertThat(responseBody.getContent().size()).isEqualTo(1);
+        Assertions.assertThat(responseBody.getTotalPages()).isEqualTo(1);
+        Assertions.assertThat(responseBody.getNumber()).isEqualTo(0);
+        Assertions.assertThat(responseBody.getSize()).isEqualTo(1);
+
+    }
+
+    @Test
+    public void buscarEstacionamentos_PorClienteCPFComPerfilCliente_RetornarError403(){
+        testClient.get().uri("/api/v1/estacionamentos/cpf/{cpf}", "221.660.140-38")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "bia@email.com.br", "123456"))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody()
+                .jsonPath("status").isEqualTo(403)
+                .jsonPath("method").isEqualTo("GET");
+
+    }
+
+    @Test
+    public void buscarEstacionamentos_DoClienteLogado_RetornarSucesso200(){
+        PageableDTO responseBody;
+        responseBody = testClient.get().uri("/api/v1/estacionamentos?size=1&page=0")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "bob@email.com.br", "123456"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PageableDTO.class)
+                .returnResult().getResponseBody();
+
+        Assertions.assertThat(responseBody).isNotNull();
+        Assertions.assertThat(responseBody.getContent().size()).isEqualTo(1);
+        Assertions.assertThat(responseBody.getTotalPages()).isEqualTo(2);
+        Assertions.assertThat(responseBody.getNumber()).isEqualTo(0);
+        Assertions.assertThat(responseBody.getSize()).isEqualTo(1);
+
+    }
+
+    @Test
+    public void buscarEstacionamentos_DoClienteLogadoComPerfilAdmin_RetornarError403(){
+        testClient.get().uri("/api/v1/estacionamentos")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "ana@email.com.br", "123456"))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody()
+                .jsonPath("status").isEqualTo(403)
+                .jsonPath("method").isEqualTo("GET");
 
     }
 }

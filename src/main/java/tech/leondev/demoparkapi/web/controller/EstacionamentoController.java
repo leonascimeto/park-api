@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,17 +13,26 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import tech.leondev.demoparkapi.entity.ClienteVaga;
+import tech.leondev.demoparkapi.jwt.JwtUserDetails;
+import tech.leondev.demoparkapi.repository.projection.ClienteVagaProjection;
 import tech.leondev.demoparkapi.service.ClienteVagaService;
 import tech.leondev.demoparkapi.service.EstacionamentoService;
 import tech.leondev.demoparkapi.web.dto.EstacionamentoCreateDTO;
 import tech.leondev.demoparkapi.web.dto.EstacionamentoResponseDTO;
+import tech.leondev.demoparkapi.web.dto.PageableDTO;
 import tech.leondev.demoparkapi.web.dto.mapper.ClienteVagaMapper;
+import tech.leondev.demoparkapi.web.dto.mapper.PageableMapper;
 import tech.leondev.demoparkapi.web.exception.ErrorMessage;
 
 import java.net.URI;
@@ -118,8 +128,85 @@ public class EstacionamentoController {
     @PutMapping("/checkout/{recibo}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EstacionamentoResponseDTO> checkout(@PathVariable String recibo) {
+        log.info("[start] EstacionamentoController - checkout");
         ClienteVaga clienteVaga = estacionamentoService.checkOut(recibo);
         EstacionamentoResponseDTO estacionamentoResponseDTO = ClienteVagaMapper.toClienteVagaDTO(clienteVaga);
+        log.info("[end] EstacionamentoController - checkout");
         return ResponseEntity.ok(estacionamentoResponseDTO);
+    }
+
+    @Operation(summary = "Localizar os registros de estacionamentos do cliente por CPF", description = "Localizar os " +
+            "registros de estacionamentos do cliente por CPF. Requisição exige uso de um bearer token.",
+            security = @SecurityRequirement(name = "security"),
+            parameters = {
+                    @Parameter(in = ParameterIn.PATH, name = "cpf", description = "Nº do CPF referente ao cliente a ser consultado",
+                            required = true
+                    ),
+                    @Parameter(in = ParameterIn.QUERY, name = "page", description = "Representa a página retornada",
+                            content = @Content(schema = @Schema(type = "integer", defaultValue = "0"))
+                    ),
+                    @Parameter(in = ParameterIn.QUERY, name = "size", description = "Representa o total de elementos por página",
+                            content = @Content(schema = @Schema(type = "integer", defaultValue = "5"))
+                    ),
+                    @Parameter(in = ParameterIn.QUERY, name = "sort", description = "Campo padrão de ordenação 'dataEntrada,asc'. ",
+                            array = @ArraySchema(schema = @Schema(type = "string", defaultValue = "dataEntrada,asc")),
+                            hidden = true
+                    )
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Recurso localizado com sucesso",
+                            content = @Content(mediaType = " application/json;charset=UTF-8",
+                                    schema = @Schema(implementation = PageableDTO.class))),
+                    @ApiResponse(responseCode = "403", description = "Recurso não permito ao perfil de CLIENTE",
+                            content = @Content(mediaType = " application/json;charset=UTF-8",
+                                    schema = @Schema(implementation = ErrorMessage.class)))
+            })
+    @GetMapping("/cpf/{cpf}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PageableDTO> getAllByCpf(@PathVariable String cpf, @Parameter(hidden = true)
+    @PageableDefault(size = 5, sort = "dataEntrada",
+            direction = Sort.Direction.ASC) Pageable pageable){
+        log.info("[start] EstacionamentoController - getAllByCpf");
+        Page<ClienteVagaProjection> projection = clienteVagaService.buscarTodosPorCpf(cpf, pageable);
+        PageableDTO dto = PageableMapper.toDto(projection);
+        log.info("[end] EstacionamentoController - getAllByCpf");
+        return ResponseEntity.ok(dto);
+    }
+
+    @Operation(summary = "Localizar os registros de estacionamentos do cliente logado",
+            description = "Localizar os registros de estacionamentos do cliente logado. " +
+                    "Requisição exige uso de um bearer token.",
+            security = @SecurityRequirement(name = "security"),
+            parameters = {
+                    @Parameter(in = ParameterIn.QUERY, name = "page",
+                            content = @Content(schema = @Schema(type = "integer", defaultValue = "0")),
+                            description = "Representa a página retornada"
+                    ),
+                    @Parameter(in = ParameterIn.QUERY, name = "size",
+                            content = @Content(schema = @Schema(type = "integer", defaultValue = "5")),
+                            description = "Representa o total de elementos por página"
+                    ),
+                    @Parameter(in = ParameterIn.QUERY, name = "sort", hidden = true,
+                            array = @ArraySchema(schema = @Schema(type = "string", defaultValue = "dataEntrada,asc")),
+                            description = "Campo padrão de ordenação 'dataEntrada,asc'. ")
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Recurso localizado com sucesso",
+                            content = @Content(mediaType = " application/json;charset=UTF-8",
+                                    schema = @Schema(implementation = EstacionamentoResponseDTO.class))),
+                    @ApiResponse(responseCode = "403", description = "Recurso não permito ao perfil de ADMIN",
+                            content = @Content(mediaType = " application/json;charset=UTF-8",
+                                    schema = @Schema(implementation = ErrorMessage.class)))
+            })
+    @GetMapping
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<PageableDTO> getAllEstacionamentosDoCliente(@AuthenticationPrincipal JwtUserDetails user,
+                                                                      @Parameter(hidden = true) @PageableDefault(
+                                                                              size = 5, sort = "dataEntrada",
+                                                                              direction = Sort.Direction.ASC) Pageable pageable) {
+
+        Page<ClienteVagaProjection> projection = clienteVagaService.buscarTodosPorUsuarioId(user.getId(), pageable);
+        PageableDTO dto = PageableMapper.toDto(projection);
+        return ResponseEntity.ok(dto);
     }
 }
