@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 import tech.leondev.demoparkapi.entity.Cliente;
 import tech.leondev.demoparkapi.repository.projection.ClienteProjection;
 
+import java.util.Optional;
+
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
     @Query("select c from Cliente c")
@@ -15,4 +17,6 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
 
     Cliente findByUsuarioId(Long id);
+
+    Optional<Cliente> findByCpf(String cpf);
 }
