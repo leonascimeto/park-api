@@ -131,4 +131,94 @@ public class EstacionamentoIT {
                 .jsonPath("status").isEqualTo(404)
                 .jsonPath("method").isEqualTo("POST");
     }
+
+    @Test
+    public void buscarPerfil_comPerfilAdmin_RetornarDados200(){
+        testClient.get().uri("/api/v1/estacionamentos/checkin/{recibo}", "20230313-101300")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "ana@email.com.br", "123456"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("placa").isEqualTo("FIT-1020")
+                .jsonPath("marca").isEqualTo("FIAT")
+                .jsonPath("cor").isEqualTo("VERDE")
+                .jsonPath("modelo").isEqualTo("PALIO")
+                .jsonPath("clienteCpf").isEqualTo("776.809.540-54")
+                .jsonPath("recibo").isEqualTo("20230313-101300")
+                .jsonPath("dataEntrada").exists()
+                .jsonPath("vagaCodigo").exists();
+    }
+
+    @Test
+    public void buscarPerfil_comPerfilCliente_RetornarDados200(){
+        testClient.get().uri("/api/v1/estacionamentos/checkin/{recibo}", "20230313-101300")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "bob@email.com.br", "123456"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("placa").isEqualTo("FIT-1020")
+                .jsonPath("marca").isEqualTo("FIAT")
+                .jsonPath("cor").isEqualTo("VERDE")
+                .jsonPath("modelo").isEqualTo("PALIO")
+                .jsonPath("clienteCpf").isEqualTo("776.809.540-54")
+                .jsonPath("recibo").isEqualTo("20230313-101300")
+                .jsonPath("dataEntrada").exists()
+                .jsonPath("vagaCodigo").exists();
+    }
+
+    @Test
+    public void buscarCheckin_ComReciboInexistente_RetornarErro404(){
+        testClient.get().uri("/api/v1/estacionamentos/checkin/{recibo}", "20230313-000000")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "ana@email.com.br", "123456"))
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody()
+                .jsonPath("status").isEqualTo(404)
+                .jsonPath("method").isEqualTo("GET");
+    }
+
+    @Test
+    public void criarCheckout_ComReciboExistente_RetornarSucesso200(){
+        testClient.put().uri("/api/v1/estacionamentos/checkout/{recibo}", "20230313-101300")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "ana@email.com.br", "123456"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("placa").isEqualTo("FIT-1020")
+                .jsonPath("marca").isEqualTo("FIAT")
+                .jsonPath("modelo").isEqualTo("PALIO")
+                .jsonPath("cor").isEqualTo("VERDE")
+                .jsonPath("dataEntrada").isEqualTo("2023-03-13 10:15:00")
+                .jsonPath("dataSaida").exists()
+                .jsonPath("valor").exists()
+                .jsonPath("desconto").exists()
+                .jsonPath("clienteCpf").isEqualTo("776.809.540-54")
+                .jsonPath("vagaCodigo").isEqualTo("A-01")
+                .jsonPath("recibo").isEqualTo("20230313-101300");
+
+    }
+
+    @Test
+    public void criarCheckout_ComReciboInexistente_RetornarError404(){
+        testClient.put().uri("/api/v1/estacionamentos/checkout/{recibo}", "20230313-000000")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "ana@email.com.br", "123456"))
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody()
+                .jsonPath("status").isEqualTo(404)
+                .jsonPath("method").isEqualTo("PUT");
+
+    }
+
+    @Test
+    public void criarCheckout_ComRoleCliebte_RetornarError403(){
+        testClient.put().uri("/api/v1/estacionamentos/checkout/{recibo}", "20230313-101300")
+                .headers(JWTAuthentication.getHeaderAuthorization(testClient, "bia@email.com.br", "123456"))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody()
+                .jsonPath("status").isEqualTo(403)
+                .jsonPath("method").isEqualTo("PUT");
+
+    }
 }
